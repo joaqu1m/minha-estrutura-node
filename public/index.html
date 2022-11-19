@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nodeTesting</title>
+</head>
+<body>
+    <p id="textoCordenadas"></p>
+    <button onclick="selecionar()">selecionar</button> <br><br>
+    <button onclick="selecionarComParametros()">selecionar com parametros internos back-end</button> <br><br>
+    <input type="checkbox" id="check">
+    <button onclick="inserir()">inserir</button>
+    <p id="recebido" style="background-color: black; color: white;"></p>
+</body>
+</html>
+<script>
+    // Funções para banco de dados!!
+    function inserir() {
+        // Coletando valores que serão enviados ao banco
+        const date = new Date()
+        var dia = ""
+        var hora = ""
+        dateTime = [String(date.getMonth()+1), String(date.getDate()), String(date.getFullYear()), String(date.getHours()), String(date.getMinutes()), String(date.getSeconds())]
+        for (i = 0; i < 6; i++) {
+            if (i == 1 || i == 2) {dia += `/`} else if (i == 4 || i == 5) {hora += `:`}
+            if (dateTime[i].length < 2) {
+                if (i < 3) {dia += `0${dateTime[i]}`} else {hora += `0${dateTime[i]}`}
+            } else {
+                if (i < 3) {dia += dateTime[i]} else {hora += dateTime[i]}
+            }
+        }
+        var rng = String(Math.random() * 100).substring(0,6)
+        recebido.innerHTML = ""
+
+        // Começo da operação do que se conecta às rotas
+        fetch("/query/inserir", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            // esse Body é responsável por enviar um JSON ao arquivo de rotas, onde valores serão inseridos
+            body: JSON.stringify({
+                rng: rng,
+                dia: dia,
+                hora: hora
+            })
+        })
+        // o then não é necessário, estou utilizando apenas para saber se o insert foi concluído com sucesso
+        .then(function (response) {
+            if (response.ok) {
+                response.json().then(function (resposta) {
+                    if (resposta != null) {
+                        recebido.innerHTML = "Inserido com sucesso"
+                        if (check.checked) {
+                            recebido.innerHTML += `<br>id retornado do auto increment: ${resposta.insertId}`
+                        }
+                    }
+                })
+            }
+        })
+    }
+
+    function selecionar() {
+        recebido.innerHTML = ""
+        fetch("/query/selecionar", {
+            method: "GET"
+        })
+        // é pelo then que conseguimos os resultados do método GET, sendo retornados na var "resposta"
+        .then(function (response) {
+            if (response.ok) {
+                response.json().then(function (resposta) {
+                    for (i = 0; i < resposta.length; i++) {
+                        recebido.innerHTML += `${JSON.stringify(resposta[i])} <br>`
+                    }
+                })
+            }
+        })
+    }
+
+    function selecionarComParametros() {
+        recebido.innerHTML = ""
+        var valores = ["valores a enviar", "a", "b"]
+        fetch(`/query/selecionar/${valores}`, {
+            method: "GET"
+        }).then(function (response) {
+            if (response.ok) {
+                response.json().then(function (resposta) {
+                    for (i = 0; i < resposta.length; i++) {
+                        recebido.innerHTML += `${JSON.stringify(resposta[i])} <br>`
+                    }
+                })
+            }
+        })
+    }
+</script>
